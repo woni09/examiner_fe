@@ -29,6 +29,8 @@ localStorage.setItem('registeredUsers', JSON.stringify({
 }));
 ```
 
+
+
 > ✅ 실제 백엔드 API 연동 전까지는 이 방식으로 로그인 기
 
 # Patentsight Project
