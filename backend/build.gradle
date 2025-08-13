@@ -58,7 +58,3 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
-
-tasks.named('bootRun') {
-    mainClass = 'com.patentsight.PatentProjectApplication'
-}

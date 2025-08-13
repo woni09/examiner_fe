@@ -7,7 +7,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-
 @Configuration
 public class SecurityConfig {
 
@@ -21,7 +20,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.and()) // 🔹 CORS 설정 (CorsConfig에서 처리)
                 .csrf(csrf -> csrf.disable()) // 🔹 REST API라 CSRF 비활성화
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin())) // 🔹 H2 콘솔 iframe 허용
                 .authorizeHttpRequests(auth -> auth

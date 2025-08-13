@@ -11,11 +11,6 @@ import java.util.List;
 @NoArgsConstructor // JSON <-> 객체 변환을 위해 기본 생성자가 반드시 필요합니다.
 public class AiCheckResponse {
 
-    // 생성자 추가
-    public AiCheckResponse(String checkId, String status) {
-        // 기본값으로 초기화
-    }
-
     // FastAPI 응답의 Key와 똑같은 이름의 필드들을 만듭니다.
     private List<FormatError> formatErrors;
     private List<MissingSection> missingSections;
