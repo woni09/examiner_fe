@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class DraftListResponse {
     private Long draftId;

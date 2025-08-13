@@ -24,8 +24,7 @@ public class AiDraftController {
     // ✅ 1. 청구항 초안 생성
     @PostMapping("/drafts/claims")
     public ClaimDraftDetails generateClaimDraft(@RequestBody ClaimDraftRequest request) {
-        String raw = aiService.generateClaimDraft(request.getQuery(), request.getTopK());
-        return claimDraftClient.parseDetails(raw);
+        return claimDraftClient.generateClaimDraft(request.getQuery(), request.getTopK());
     }
 
     // ✅ 2. 초안 생성 (거절)
