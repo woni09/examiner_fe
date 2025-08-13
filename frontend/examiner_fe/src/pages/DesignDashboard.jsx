@@ -174,7 +174,6 @@ export default function DesignDashboard() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Search and Filter Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">심사 서류 검색</h2>
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
