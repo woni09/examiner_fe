@@ -11,6 +11,7 @@ concurrency:
   group: cd-ec2-frontend-cicd3
   cancel-in-progress: true
 
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest

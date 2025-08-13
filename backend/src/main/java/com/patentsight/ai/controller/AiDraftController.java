@@ -1,58 +1,60 @@
 package com.patentsight.ai.controller;
 
-<<<<<<< HEAD
+import com.patentsight.ai.dto.ClaimDraftDetails;
 import com.patentsight.ai.dto.DraftDetailResponse;
 import com.patentsight.ai.dto.DraftListResponse;
 import com.patentsight.ai.dto.DraftUpdateRequest;
 import com.patentsight.ai.service.AiService;
 import com.patentsight.ai.service.DraftService;
+import com.patentsight.ai.util.ClaimDraftClient;
 import lombok.RequiredArgsConstructor;
-=======
-import com.patentsight.ai.dto.*;
-import com.patentsight.ai.service.DraftService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
->>>>>>> origin/fix/font_design
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-<<<<<<< HEAD
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
 public class AiDraftController {
 
     private final AiService aiService;
     private final DraftService draftService;
+    private final ClaimDraftClient claimDraftClient;
 
-    // ✅ 1. 초안 생성 (거절)
-    @PostMapping("/draft/rejections")
+    // ✅ 1. 청구항 초안 생성
+    @PostMapping("/drafts/claims")
+    public ClaimDraftDetails generateClaimDraft(@RequestBody ClaimDraftRequest request) {
+        String raw = aiService.generateClaimDraft(request.getQuery(), request.getTopK());
+        return claimDraftClient.parseDetails(raw);
+    }
+
+    // ✅ 2. 초안 생성 (거절)
+    @PostMapping("/drafts/rejections")
     public DraftDetailResponse generateRejectionDraft(@RequestBody RejectionDraftRequest request) {
         return aiService.generateRejectionDraft(request.getPatentId(), request.getFileId());
     }
 
-    // ✅ 2. 초안 목록 조회
+    // ✅ 3. 초안 목록 조회
     @GetMapping("/drafts")
     public List<DraftListResponse> getDrafts(@RequestParam("patent_id") Long patentId) {
         return draftService.getDrafts(patentId);
     }
 
-    // ✅ 3. 초안 상세 조회
-    @GetMapping("/draft/{draftId}")
+    // ✅ 4. 초안 상세 조회
+    @GetMapping("/drafts/{draftId}")
     public DraftDetailResponse getDraft(@PathVariable Long draftId) {
         return draftService.getDraft(draftId);
     }
 
-    // ✅ 4. 초안 수정
-    @PatchMapping("/draft/{draftId}")
+    // ✅ 5. 초안 수정
+    @PatchMapping("/drafts/{draftId}")
     public DraftDetailResponse updateDraft(@PathVariable Long draftId,
                                            @RequestBody DraftUpdateRequest request) {
         return draftService.updateDraft(draftId, request.getContent());
     }
 
-    // ✅ 5. 초안 삭제
-    @DeleteMapping("/draft/{draftId}")
+    // ✅ 6. 초안 삭제
+    @DeleteMapping("/drafts/{draftId}")
     public void deleteDraft(@PathVariable Long draftId) {
         draftService.deleteDraft(draftId);
     }
@@ -78,41 +80,25 @@ public class AiDraftController {
             this.fileId = fileId;
         }
     }
-}
-=======
-@RequestMapping("/api/ai/drafts")
-public class AiDraftController {
 
-    private final DraftService draftService;
+    public static class ClaimDraftRequest {
+        private String query;
+        private Integer topK;
 
-    @Autowired
-    public AiDraftController(DraftService draftService) {
-        this.draftService = draftService;
-    }
+        public String getQuery() {
+            return query;
+        }
 
-    @PostMapping("/claims")
-    public ResponseEntity<DraftResponse> generateClaimDraft(@RequestBody PatentIdRequest request) {
-        DraftResponse response = draftService.generateClaimDraft(request.getPatentId());
-        return ResponseEntity.ok(response);
-    }
+        public void setQuery(String query) {
+            this.query = query;
+        }
 
-    @PostMapping("/rejections")
-    public ResponseEntity<DraftResponse> generateRejectionDraft(@RequestBody PatentIdRequest request) {
-        DraftResponse response = draftService.generateRejectionDraft(request.getPatentId());
-        return ResponseEntity.ok(response);
-    }
+        public Integer getTopK() {
+            return topK;
+        }
 
-    // 수정된 부분: @RequestParam 대신 @PathVariable을 사용하도록 변경
-    @GetMapping("/{patentId}/drafts")
-    public ResponseEntity<List<DraftListResponse>> listDrafts(@PathVariable Long patentId) {
-        return ResponseEntity.ok(draftService.getDrafts(patentId));
-    }
-
-    // 수정된 부분: @RequestParam 대신 @PathVariable을 사용하도록 변경
-    @DeleteMapping("/{patentId}/drafts")
-    public ResponseEntity<Void> deleteDrafts(@PathVariable Long patentId) {
-        draftService.deleteDrafts(patentId);
-        return ResponseEntity.noContent().build();
+        public void setTopK(Integer topK) {
+            this.topK = topK;
+        }
     }
 }
->>>>>>> origin/fix/font_design
