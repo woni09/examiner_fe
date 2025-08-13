@@ -1,35 +1,44 @@
 package com.patentsight.ai.controller;
 
-import com.patentsight.ai.dto.AiCheckRequest;
-import com.patentsight.ai.dto.AiCheckResponse;
-import com.patentsight.ai.service.ValidationService; // 다음 단계에 만들 서비스
+import com.patentsight.ai.dto.ImageSearchResponse;
+import com.patentsight.ai.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-// ... import 구문
-import org.springframework.web.bind.annotation.PathVariable; // PathVariable import
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
+// 기본 주소를 /api/ai/search로 더 넓게 잡습니다.
+@RequestMapping("/api/ai/search")
 @RequiredArgsConstructor
-public class AiValidationController {
+public class AiSearchController {
 
-    private final ValidationService validationService;
+    private final SearchService searchService;
 
-    // 기존 엔드포인트 (JSON 직접 받기)
-    @PostMapping("/api/ai/validations")
-    public ResponseEntity<AiCheckResponse> validateDocumentByBody(@RequestBody AiCheckRequest request) {
-        AiCheckResponse response = validationService.validateDocument(request);
+    // --- 기존 상표 검색 API ---
+    @PostMapping("/trademark/image")
+    public ResponseEntity<ImageSearchResponse> searchTrademarkByImage(@RequestParam("file") MultipartFile file) {
+        ImageSearchResponse response = searchService.searchTrademarkByImage(file);
         return ResponseEntity.ok(response);
     }
 
-    // --- 새로 추가할 엔드포인트 (ID로 검증하기) ---
-    @PostMapping("/api/ai/patents/{id}/validate")
-    public ResponseEntity<AiCheckResponse> validateDocumentById(@PathVariable("id") Long patentId) {
-        AiCheckResponse response = validationService.validateDocument(patentId);
+    @PostMapping("/trademark/text")
+    public ResponseEntity<ImageSearchResponse> searchTrademarkByText(@RequestParam("text") String text) {
+        ImageSearchResponse response = searchService.searchTrademarkByText(text);
+        return ResponseEntity.ok(response);
+    }
+
+    // --- 아래에 디자인 검색 API 2개 추가 ---
+
+    @PostMapping("/design/image")
+    public ResponseEntity<ImageSearchResponse> searchDesignByImage(@RequestParam("file") MultipartFile file) {
+        ImageSearchResponse response = searchService.searchDesignByImage(file);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/design/text")
+    public ResponseEntity<ImageSearchResponse> searchDesignByText(@RequestParam("text") String text) {
+        ImageSearchResponse response = searchService.searchDesignByText(text);
         return ResponseEntity.ok(response);
     }
 }
