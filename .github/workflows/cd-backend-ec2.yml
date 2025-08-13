@@ -1,0 +1,95 @@
+name: CD backend → EC2 (CICD)
+
+on:
+  push:
+    branches: [ "CICD" ]          # CICD 브랜치에 푸시될 때만
+    paths:
+      - "backend/**"              # backend 변경시에만 트리거
+  workflow_dispatch:               # 수동 실행 버튼
+
+concurrency:
+  group: cd-ec2-backend
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Make gradlew executable
+        working-directory: backend
+        run: chmod +x gradlew
+
+      - name: Build (Gradle bootJar)
+        working-directory: backend
+        run: ./gradlew clean bootJar -x test
+
+      - name: Find artifact (jar path)
+        id: findjar
+        shell: bash
+        run: |
+          JAR=$(ls -t backend/build/libs/*.jar | head -n 1)
+          echo "jar=$JAR" >> $GITHUB_OUTPUT
+          echo "Found JAR: $JAR"
+
+      # (안전장치) EC2에 releases 폴더 보장
+      - name: Ensure releases dir exists on EC2
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            mkdir -p /home/${{ secrets.USERNAME }}/app/releases
+
+      # JAR 업로드: 상위 폴더(backend/build/libs)를 제거하고 파일만 떨어뜨림
+      - name: Upload JAR to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          source: ${{ steps.findjar.outputs.jar }}    # ex) backend/build/libs/*.jar
+          target: /home/${{ secrets.USERNAME }}/app/releases/
+          strip_components: 3                          # ★ backend/build/libs 제거
+          overwrite: true
+
+      # (선택) 업로드 확인 - 문제시 로그 확인용
+      - name: Verify upload on EC2
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            ls -la /home/${{ secrets.USERNAME }}/app/releases
+            find /home/${{ secrets.USERNAME }}/app/releases -maxdepth 3 -type f -name "*.jar" -print
+
+      # 서비스 재시작: 절대경로 하드코딩 + 최신 JAR 선택
+      - name: Restart service on EC2
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            set -e
+            APP_DIR="/home/${{ secrets.USERNAME }}/app"
+            LATEST_JAR=$(ls -t "$APP_DIR"/releases/*.jar | head -n 1)
+            echo "Latest jar: $LATEST_JAR"
+            if [ -z "$LATEST_JAR" ]; then
+              echo "ERROR: No jar found under $APP_DIR/releases"; exit 1
+            fi
+            "$APP_DIR"/deploy.sh "$LATEST_JAR"
+            sleep 2
+            curl -fsS "http://127.0.0.1:${APP_PORT:-8080}/actuator/health" || curl -fsS "http://127.0.0.1:${APP_PORT:-8080}" || true

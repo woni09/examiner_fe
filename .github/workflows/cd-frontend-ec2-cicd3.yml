@@ -1,0 +1,93 @@
+name: CD frontend → EC2 (cicd3)
+
+on:
+  push:
+    branches: [ "cicd3" ]
+    paths:
+      - "frontend/**"
+  workflow_dispatch:
+
+concurrency:
+  group: cd-ec2-frontend-cicd3
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      EC2_APP_DIR: /home/${{ secrets.USERNAME }}/app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies (examiner_fe)
+        working-directory: frontend/examiner_fe
+        run: npm ci
+
+      - name: Build (examiner_fe)
+        working-directory: frontend/examiner_fe
+        run: npm run build
+
+      - name: Install dependencies (applicant_fe)
+        working-directory: frontend/applicant_fe
+        run: npm ci
+
+      - name: Build (applicant_fe)
+        working-directory: frontend/applicant_fe
+        run: npm run build
+
+      - name: Upload examiner_fe to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          source: frontend/examiner_fe/dist/
+          target: ${{ env.EC2_APP_DIR }}/frontend/examiner_fe/
+          strip_components: 2
+          overwrite: true
+
+      - name: Upload applicant_fe to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          source: frontend/applicant_fe/dist/
+          target: ${{ env.EC2_APP_DIR }}/frontend/applicant_fe/
+          strip_components: 2
+          overwrite: true
+
+      - name: Restart frontend services on EC2
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            set -e
+            APP_DIR="/home/user-sev/app"
+            
+            # 프론트엔드 서비스 재시작
+            if systemctl is-active --quiet examiner-frontend; then
+              sudo systemctl restart examiner-frontend
+              echo "Examiner frontend restarted"
+            fi
+            
+            if systemctl is-active --quiet applicant-frontend; then
+              sudo systemctl restart applicant-frontend
+              echo "Applicant frontend restarted"
+            fi
+            
+            # 헬스 체크
+            sleep 5
+            curl -fsS "http://127.0.0.1:3001" || echo "Examiner frontend health check failed"
+            curl -fsS "http://127.0.0.1:3000" || echo "Applicant frontend health check failed"
