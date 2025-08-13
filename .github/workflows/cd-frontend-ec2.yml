@@ -61,3 +61,5 @@ jobs:
             # 상태 한 줄 + 간단 헬스체크 (tail 금지)
             pm2 list | grep "$APP_NAME" || true
             curl -Is "http://127.0.0.1:${PORT}" | head -n1 || true
+
+
